@@ -1,0 +1,8 @@
+
+rule all:
+	'Collect all this output.'
+	input:
+		'results/QC/main-data.txt'
+
+
+include: "rule/analyse-data.smk"
