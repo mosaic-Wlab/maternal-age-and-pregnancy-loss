@@ -7,6 +7,6 @@ This repository contains code for the project on maternal age and time to miscar
 
 ## Authors
 
-* {{Pol Solé-Navais}} (@{{psnavais}})
-* {{Felix Evers}}
+* {Pol Solé-Navais} (@{psnavais})
+* {Felix Evers}
 
