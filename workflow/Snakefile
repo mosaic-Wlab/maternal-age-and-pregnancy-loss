@@ -1,8 +1,16 @@
 
+oocytes_nms= ['own-oocyte', 'oocyte-recipient']
+
 rule all:
 	'Collect all this output.'
 	input:
-		'results/QC/main-data.txt'
+		expand('results/figures/rates-by-maternal-age-{oocytes}.png', oocytes= oocytes_nms),
+		expand('results/figures/raw-survival-rate-{oocytes}.png', oocytes= oocytes_nms),
+		expand('results/figures/survival-rate-maternal-age-{oocytes}.png', oocytes= oocytes_nms),
+		expand('results/figures/time-varying-PAMM-{oocytes}.png', oocytes= oocytes_nms),
+		expand('results/figures/male-infertility-time-varying-PAMM-{oocytes}.png', oocytes= oocytes_nms),
+		expand('results/figures/data/PAMM-recurrent-{oocytes}-data.txt', oocytes= oocytes_nms),
+		expand('results/figures/data/time-varying-zph-recurrent-{oocytes}.txt', oocytes= oocytes_nms)
 
 
-include: "rule/analyse-data.smk"
+include: "rules/analyse-data.smk"

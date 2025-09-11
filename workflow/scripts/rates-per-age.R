@@ -3,11 +3,24 @@
 library(data.table)
 library("dplyr")
 library("ggplot2")
+library(cowplot)
+library(showtext)
+options(warn=-1)
+
+showtext_opts(dpi = 300)
+showtext_auto(enable = TRUE)
 
 colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73",
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+d= fread(snakemake@input[[1]])
+
+df= filter(d, Resultfetus1 != '', gest_duration > 15, !is.na(gest_duration), !is.na(maternal_age),
+           !is.na(misc))
+
 #Implantation rate
+
+print(paste('Implantation rate sample size for ', snakemake@wildcards[['oocytes']], ':', nrow(d)))
 
 imp_by_age= group_by(d, ifelse(trunc(maternal_age)<= 20, 20,
                                  ifelse(trunc(maternal_age)> 43, 44, trunc(maternal_age)))) %>%
@@ -25,6 +38,10 @@ df$Resultfetus1= factor(df$Resultfetus1, levels= c('Biokemisk graviditet', 'Spon
                                                    'Dodfott barn vecka 28+0 eller mer', 'Levande fott barn'))
 
 # Miscarriage rate
+
+print(paste('Implantation rate sample size for ', snakemake@wildcards[['oocytes']], ':', nrow(df)))
+print(paste('Implantation rate sample size for ', snakemake@wildcards[['oocytes']], ':', nrow(filter(df, misc==1))))
+
 
 misc_by_age= group_by(df, ifelse(trunc(maternal_age)<= 20, 20,
 ifelse(trunc(maternal_age)> 43, 44, trunc(maternal_age)))) %>%
@@ -48,15 +65,21 @@ misc_by_age$upCI= ifelse(misc_by_age$upCI> 1, 1, misc_by_age$upCI)
 
 misc_by_age= filter(misc_by_age, !is.na(maternal_age))
 
-p1= ggplot(misc_by_age, aes(x= factor(maternal_age), y= p_hat, colour= outcome)) +
-  geom_point() +
-  geom_errorbar(aes(ymin= loCI, ymax=upCI), width=.1,
-                position=position_dodge(0.05)) +
-  theme_classic() +
+p1= ggplot(misc_by_age, aes(x= factor(maternal_age), y= p_hat, colour= outcome, fill= outcome)) +
+  geom_pointrange(aes(ymin= loCI, ymax=upCI), size = .1, fatten= 0.2,
+                position=position_dodge(0.05), shape= 21 ) +
+  scale_color_manual(values= colorBlindBlack8[c(2, 6)]) +
+  scale_fill_manual(values= colorBlindBlack8[c(2, 6)]) +
+  theme_cowplot(font_size= 10) +
   ylab('Probability (95% CI)') +
   xlab('Maternal age, years') +
-  scale_x_discrete(breaks = function(x){x[c(TRUE, FALSE)]})
+  scale_x_discrete(breaks = function(x){x[c(TRUE, FALSE)]}) +
+  theme(legend.title = element_blank(), 
+        axis.text= element_text(size= 8),
+        axis.line = element_line(color = "black", size = 0.2, lineend = "square"),
+        axis.ticks.y = element_line(color = "black", size = 0.2),
+        legend.position="bottom")
 
-ggsave(snakemake@output[[1]], p1)
+ggsave(snakemake@output[[1]], p1, width= 88, height= 60, units= 'mm')
 
 fwrite(misc_by_age, snakemake@output[[2]], sep= '\t')
