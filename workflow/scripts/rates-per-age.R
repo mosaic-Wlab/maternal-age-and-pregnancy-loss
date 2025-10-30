@@ -6,14 +6,20 @@ library("ggplot2")
 library(cowplot)
 library(showtext)
 options(warn=-1)
-
+library(gtsummary)
+library(broom)
 showtext_opts(dpi = 300)
 showtext_auto(enable = TRUE)
 
 colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73",
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+
 d= fread(snakemake@input[[1]])
+
+d$implantation_failure= as.numeric(d$Resultfetus1=='')
+d$early_miscarriage= ifelse(is.na(d$misc) | is.na(d$gest_duration), NA, ifelse(d$misc== 1 & d$gest_duration< 7*10, 1, 0))
+
 
 df= filter(d, Resultfetus1 != '', gest_duration > 15, !is.na(gest_duration), !is.na(maternal_age),
            !is.na(misc))
@@ -36,6 +42,30 @@ df$Resultfetus1= factor(df$Resultfetus1, levels= c('Biokemisk graviditet', 'Spon
                                                    'Spontan abort vecka 13+0 \x96 21+6',
                                                    'Dodfott barn vecka 22+0 \x96 27+6',
                                                    'Dodfott barn vecka 28+0 eller mer', 'Levande fott barn'))
+
+### Descriptive characteristics
+
+x= d %>%
+  tbl_summary(
+    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+statistic = list(all_continuous() ~ "{mean} ± {sd}"),
+digits = list(everything() ~ c(2))) %>%
+  add_ci(method = list(all_continuous() ~ "t.test")) %>%
+  gtsummary::modify_header(ci_stat_0 ~ "**95% CI**")
+
+
+x1= d %>%
+  tbl_summary(
+    include = c(Incubationdays, implantation_failure, misc, early_miscarriage),
+    statistic = list(all_categorical() ~ "{n} ({p}%)"),
+digits = list(everything() ~ c(0, 2))) %>%
+  add_ci(method = list(all_categorical() ~ "wilson")) %>%
+  gtsummary::modify_header(ci_stat_0 ~ "**95% CI**")
+
+
+
+x= bind_rows(as.data.frame(x), as.data.frame(x1))
+fwrite(x, snakemake@output[[3]], sep= '\t')
 
 # Miscarriage rate
 
@@ -83,3 +113,25 @@ p1= ggplot(misc_by_age, aes(x= factor(maternal_age), y= p_hat, colour= outcome, 
 ggsave(snakemake@output[[1]], p1, width= 88, height= 60, units= 'mm')
 
 fwrite(misc_by_age, snakemake@output[[2]], sep= '\t')
+
+x= df %>%
+  tbl_summary(include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+statistic = list(all_continuous() ~ "{mean} ± {sd}"),
+digits = list(everything() ~ c(2))) %>%
+  add_ci(method = list(all_continuous() ~ "t.test")) %>%
+  gtsummary::modify_header(ci_stat_0 ~ "**95% CI**")
+
+
+x1= df %>%
+  tbl_summary(
+    include = c(Incubationdays, implantation_failure, misc, early_miscarriage),
+    statistic = list(all_categorical() ~ "{n} ({p}%)"),
+digits = list(everything() ~ c(0, 2))) %>%
+  add_ci(method = list(all_categorical() ~ "wilson")) %>%
+  gtsummary::modify_header(ci_stat_0 ~ "**95% CI**")
+
+
+
+x= bind_rows(as.data.frame(x), as.data.frame(x1))
+fwrite(x, snakemake@output[[4]], sep= '\t')
+

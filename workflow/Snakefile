@@ -1,16 +1,22 @@
 
 oocytes_nms= ['own-oocyte', 'oocyte-recipient']
 
+wildcard_constraints:
+	oocytes= '|'.join(oocytes_nms)
+
 rule all:
 	'Collect all this output.'
 	input:
-		expand('results/figures/rates-by-maternal-age-{oocytes}.png', oocytes= oocytes_nms),
-		expand('results/figures/raw-survival-rate-{oocytes}.png', oocytes= oocytes_nms),
-		expand('results/figures/survival-rate-maternal-age-{oocytes}.png', oocytes= oocytes_nms),
-		expand('results/figures/time-varying-PAMM-{oocytes}.png', oocytes= oocytes_nms),
-		expand('results/figures/male-infertility-time-varying-PAMM-{oocytes}.png', oocytes= oocytes_nms),
+		expand('results/figures/rates-by-maternal-age-{oocytes}.pdf', oocytes= oocytes_nms),
+		expand('results/figures/raw-survival-rate-{oocytes}.pdf', oocytes= oocytes_nms),
+		expand('results/figures/survival-rate-maternal-age-{oocytes}.pdf', oocytes= oocytes_nms),
+		expand('results/figures/time-varying-PAMM-{oocytes}.pdf', oocytes= oocytes_nms),
+		expand('results/figures/male-infertility-time-varying-PAMM-{oocytes}.pdf', oocytes= oocytes_nms),
 		expand('results/figures/data/PAMM-recurrent-{oocytes}-data.txt', oocytes= oocytes_nms),
-		expand('results/figures/data/time-varying-zph-recurrent-{oocytes}.txt', oocytes= oocytes_nms)
+		expand('results/figures/data/time-varying-zph-recurrent-{oocytes}.txt', oocytes= oocytes_nms),
+		expand('results/description/descriptive-stats-{oocytes}.txt', oocytes= oocytes_nms),
+		'results/description/descriptive-stats-all.txt',
+		expand('results/description/descriptive-stats-{exposure}-{oocytes}.txt', oocytes= oocytes_nms, exposure= ['tertiles', 'multiples']),
 
 
 include: "rules/analyse-data.smk"

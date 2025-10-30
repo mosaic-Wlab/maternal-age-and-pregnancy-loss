@@ -7,6 +7,8 @@ library(survival)
 library(ggsurvfit)
 library(cowplot)
 library(showtext)
+library(gtsummary)
+library(broom)
 options(warn=-1)
 
 showtext_opts(dpi = 300)
@@ -16,6 +18,9 @@ colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73",
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 d= fread(snakemake@input[[1]])
+d$implantation_failure= as.numeric(d$Resultfetus1=='')
+d$early_miscarriage= ifelse(is.na(d$misc) | is.na(d$gest_duration), NA, ifelse(d$misc== 1 & d$gest_duration< 7*10, 1, 0))
+
 
 df= filter(d, Resultfetus1 != '', gest_duration > 15, !is.na(gest_duration), !is.na(maternal_age), 
            !is.na(misc))
@@ -67,6 +72,31 @@ ggsave(snakemake@output[[2]], p2, width= 88, height= 60, units= 'mm')
 x= data.frame(t(summary(raw_m2)$table))
 
 fwrite(x, snakemake@output[[3]], sep= '\t')
+
+x= df %>%
+  tbl_summary(
+    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+statistic = list(all_continuous() ~ "{mean} ± {sd}"),
+digits = list(everything() ~ c(2))
+) %>%
+  add_ci(method = list(all_continuous() ~ "t.test")) %>%
+  modify_header(ci_stat_0 ~ "**95% CI**")
+
+
+x1= df %>%
+  tbl_summary(
+    include = c(Incubationdays, implantation_failure, misc, early_miscarriage),
+    statistic = list(all_categorical() ~ "{n} ({p}%)"),
+digits = list(everything() ~ c(0, 2))
+  ) %>%
+  add_ci(method = list(all_categorical() ~ "wilson")) %>%
+  modify_header(ci_stat_0 ~ "**95% CI**")
+
+x= bind_rows(as.data.frame(x), as.data.frame(x1))
+
+
+fwrite(x, snakemake@output[[4]], sep= '\t')
+
 }
 
 

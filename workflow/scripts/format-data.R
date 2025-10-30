@@ -95,9 +95,40 @@ d$gest_duration2= with(d, ifelse(is.na(gest_duration), NA,
 d= filter(d, Resultfetus2== '', Resultfetus3== '', Resultfetus1!= 'Legal abort', Resultfetus1 != 'Pagaende viabel graviditet',
           Resultfetus1 != 'Okand', Resultfetus1 != 'Ektopisk graviditet', !is.na(Etdate))
 
+
+########################### Add previous miscarriages
+
+recurrent= fread('results/main_data/recurrent-multiple-loss.txt')
+
+recurrent= filter(recurrent, !is.na(recurrent))
+
+x= full_join(d, recurrent, by= 'lopnr')
+
+x= filter(x, (Etdate> date) | is.na(date) )
+x$prev_misc= ifelse(is.na(x$prev_misc), 0, x$prev_misc)
+
+x= group_by(x, lopnr, Etdate) %>% filter(date == max(date))
+
+
+x$cat_prev_misc= ifelse(is.na(x$prev_misc), NA,
+                        ifelse(x$prev_misc> 3, 3, x$prev_misc))
+
+d$lopnr=  as.integer(d$lopnr)
+d$Etdate= as.Date(d$Etdate)
+
+x$lopnr= as.integer(x$lopnr)
+x$Etdate= as.Date(x$Etdate)
+
+d= left_join(d, x[, c('lopnr', 'Etdate', 'date', 'prev_misc')], by = c('lopnr', 'Etdate'))
+
+d$prev_misc= ifelse(is.na(d$prev_misc), 0, d$prev_misc)
+
+
 ########################### Define maternal age
 
 d$maternal_age= as.numeric(difftime(d$Cyclestartdate, d$FODDAT, units= 'weeks'))/52.25
+
+d= group_by(d, lopnr, Etdate) %>% filter(row_number()== 1)
 
 df= filter(d, Oocytowndonated=='Egna')
 d_donated= filter(d, Oocytowndonated!='Egna')
@@ -107,4 +138,4 @@ d_donated$maternal_tertiles= ntile(d_donated$maternal_age, 3)
 
 fwrite(df, snakemake@output[[1]], sep= '\t')
 fwrite(d_donated, snakemake@output[[2]], sep= '\t')
-
+fwrite(d, snakemake@output[[3]], sep ='\t')

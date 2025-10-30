@@ -1,8 +1,7 @@
 name: R-plots
 channels:
-    - bioconda
     - conda-forge
-    - r
+    - bioconda
 dependencies:
     - r-dplyr
     - r-data.table
@@ -14,8 +13,8 @@ dependencies:
     - r-ggrepel
     - r-tidyr
     - r-ggplot2
-    - r-cairodevice
-    - r-ggh4x
     - r-pammtools
     - r-mgcv
     - r-ggsurvfit 
+    - r-gtsummary
+    - r-broom

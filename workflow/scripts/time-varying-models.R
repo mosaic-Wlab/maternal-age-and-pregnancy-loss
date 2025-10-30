@@ -80,8 +80,8 @@ ggsave(snakemake@output[[1]], p1, width= 120, height= 80, units= 'mm')
 #tv.age= rbind(mod.tv.age.ptable2, mod.tv.age.ptable)
 #tv.age.s= rbind(mod.tv.age.stable2, mod.tv.age.stable)
 
-fwrite(mod.tv.age.ptable, snakemake@output[[2]], sep= '\t')
+fwrite(data.frame(mod.tv.age.ptable), snakemake@output[[2]], sep= '\t')
 
-fwrite(mod.tv.age.stable, snakemake@output[[3]], sep= '\t')
+fwrite(data.frame(mod.tv.age.stable), snakemake@output[[3]], sep= '\t')
 
 fwrite(df1, snakemake@output[[4]], sep= '\t')

@@ -8,6 +8,8 @@ library(ggsurvfit)
 library(cowplot)
 library(showtext)
 options(warn=-1)
+library(gtsummary)
+library(broom)
 
 showtext_opts(dpi = 300)
 showtext_auto(enable = TRUE)
@@ -18,6 +20,10 @@ colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73",
 #d= fread('/mnt/hdd/common/pol/maternal_age_miscarriage/results/main_data/QIVF-QC-own-oocyte.txt')
 
 d= fread(snakemake@input[[1]])
+d$implantation_failure= as.numeric(d$Resultfetus1=='')
+d$early_miscarriage= ifelse(is.na(d$misc) | is.na(d$gest_duration), NA, ifelse(d$misc== 1 & d$gest_duration< 7*10, 1, 0))
+d$cat_prev_misc= factor(with(d, ifelse(is.na(prev_misc), NA, ifelse(prev_misc> 3, 3, prev_misc))))
+
 
 df= filter(d, Resultfetus1 != '', gest_duration > 15, !is.na(gest_duration), !is.na(maternal_age),
            !is.na(misc))
@@ -28,40 +34,7 @@ df = df %>% group_by(lopnr)  %>% sample_n(1) %>% ungroup()
 #df1= filter(df, misc== 1)
 df1= df
 
-#recurrent= fread('/mnt/hdd/common/pol/maternal_age_miscarriage/results/main_data/recurrent-multiple-loss.txt')
-recurrent= fread(snakemake@input[[2]])
-
-
-# Setting any recurrent pregnancy loss and any miscarriage
-
-anymisc= arrange(recurrent, desc(prev_misc)) %>%
-  group_by(lopnr) %>% filter(row_number()== 1)
-
-anymisc= anymisc[, c('lopnr', 'prev_misc')]
-anymisc$prev_misc= ifelse(is.na(anymisc$prev_misc), 0, anymisc$prev_misc)
-names(anymisc)= c('lopnr', 'nmisc')
-
-df1= left_join(df1, anymisc, by= c('lopnr'))
-
-df1$nmisc= df1$nmisc - df1$misc
-
-df1= mutate(df1, anyrecurrent= ifelse(lopnr %in% (filter(recurrent, recurrent== 1) %>% pull(lopnr)), 'Recurrent',
-                                   ifelse(nmisc> 0, 'Multiple', 'None')))
-
-df1$anyrecurrent= ifelse(is.na(df1$anyrecurrent), 'None', df1$anyrecurrent)
-
-df1$anyrecurrent= factor(df1$anyrecurrent, levels= c('None', 'Multiple', 'Recurrent'))
-
-x= full_join(df1, recurrent, by= 'lopnr')
-x= filter(x, Etdate> date)
-x$prev_misc= ifelse(is.na(x$prev_misc), 0, x$prev_misc)
-x= group_by(x, lopnr) %>% filter(prev_misc == max(prev_misc))
-x= filter(x, !duplicated(lopnr))
-
-x$cat_prev_misc= ifelse(is.na(x$prev_misc), NA, 
-		ifelse(x$prev_misc> 3, 3, x$prev_misc))
-
-m_tertiles= survfit2(Surv(gest_duration, misc)~ cat_prev_misc, filter(x, misc==1))
+m_tertiles= survfit2(Surv(gest_duration, misc)~ cat_prev_misc, filter(df1, misc==1))
 
 p1= ggsurvfit(m_tertiles) +
 theme_cowplot(font_size= 10) +
@@ -84,10 +57,30 @@ ggsave(snakemake@output[[1]], p1, width= 88, height= 60, units= 'mm')
 
 fwrite(data.frame(t(summary(m_tertiles)$table)), snakemake@output[[2]], sep= '\t')
 
-m1.zph= cox.zph(coxph(Surv(gest_duration, misc)~ cat_prev_misc, filter(x, misc== 1)))
-x= data.frame(m1.zph$table)
-x$variable= row.names(x)
+m1.zph= cox.zph(coxph(Surv(gest_duration, misc)~ cat_prev_misc, filter(df1, misc== 1)))
+x1= data.frame(m1.zph$table)
+x1$variable= row.names(x1)
 
-fwrite(x, snakemake@output[[3]], sep= '\t')
+fwrite(x1, snakemake@output[[3]], sep= '\t')
+
+x1= df1 %>%
+  tbl_summary(
+    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+statistic = list(all_continuous() ~ "{mean} ± {sd}"),
+digits = list(everything() ~ c(2))
+) %>%
+  add_ci(method = list(all_continuous() ~ "t.test")) %>%
+  modify_header(ci_stat_0 ~ "**95% CI**")
 
 
+x2= df1 %>%
+  tbl_summary(
+    include = c(Incubationdays, implantation_failure, misc, early_miscarriage, cat_prev_misc),
+    statistic = list(all_categorical() ~ "{n} ({p}%)"),
+    digits = list(everything() ~ c(0, 2))
+  ) %>%
+  add_ci(method = list(all_categorical() ~ "wilson")) %>%
+  modify_header(ci_stat_0 ~ "**95% CI**")
+
+x= bind_rows(as.data.frame(x1), as.data.frame(x2))
+fwrite(x, snakemake@output[[4]], sep= '\t')
