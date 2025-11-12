@@ -39,7 +39,7 @@ if (!grepl('tertiles|multiple', snakemake@output[[1]])) {
 
 desc_all= d %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -61,7 +61,7 @@ digits = list(everything() ~ c(2))) %>%
 
 desc_succ= df %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age,  gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -93,7 +93,7 @@ df$maternal_tertiles= ntile(df$maternal_age, 3)
 desc_all1= d %>%
   filter(maternal_tertiles== 1) %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -114,7 +114,7 @@ digits = list(everything() ~ c(2))) %>%
 desc_all2= d %>%
   filter(maternal_tertiles== 2) %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -135,7 +135,7 @@ digits = list(everything() ~ c(2))) %>%
 desc_all3= d %>%
   filter(maternal_tertiles== 3) %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -160,7 +160,7 @@ digits = list(everything() ~ c(2))) %>%
 desc_succ1= df %>%
   filter(maternal_tertiles== 1) %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -181,7 +181,7 @@ digits = list(everything() ~ c(2))) %>%
 desc_succ2= df %>%
   filter(maternal_tertiles== 2) %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -202,7 +202,7 @@ digits = list(everything() ~ c(2))) %>%
 desc_succ3= df %>%
   filter(maternal_tertiles==3) %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -220,33 +220,50 @@ digits = list(everything() ~ c(2))) %>%
         style_fun= list(gtsummary::all_categorical() ~ style_percent_2digits)) %>%
   gtsummary::modify_header(ci_stat_0 ~ "**95% CI**")
 
-fwrite(as.data.frame(desc_all1), snakemake@output[[1]], sep = '\t', col.names = TRUE, row.names = FALSE)
-fwrite(as.data.frame(desc_all2), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
-fwrite(as.data.frame(desc_all3), snakemake@output[[1]], sep = '\t', append=TRUE, col.names = TRUE, row.names = FALSE)
-
+write("########## All embryo transfers#########", file = snakemake@output[[1]], append = TRUE)
+write("#### First maternal age tertile\n\n\n", file = snakemake@output[[1]], append = TRUE)
+fwrite(as.data.frame(desc_all1), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 fwrite(as.data.frame(desc_cat_all1), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
+
+
+write("\n\n\n#### Second maternal age tertile\n\n\n", file = snakemake@output[[1]], append = TRUE)
+fwrite(as.data.frame(desc_all2), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 fwrite(as.data.frame(desc_cat_all2), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
+
+write("\n\n\n#### Third maternal age tertile\n\n\n", file = snakemake@output[[1]], append = TRUE)
+fwrite(as.data.frame(desc_all3), snakemake@output[[1]], sep = '\t', append=TRUE, col.names = TRUE, row.names = FALSE)
 fwrite(as.data.frame(desc_cat_all3), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 
+write("\n\n\n########## Only after successfull embryo implantation #########", file = snakemake@output[[1]], append = TRUE)
+write("#### First maternal age tertile\n\n\n", file = snakemake@output[[1]], append = TRUE)
 fwrite(as.data.frame(desc_succ1), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
-fwrite(as.data.frame(desc_succ2), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
-fwrite(as.data.frame(desc_succ3), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
-
 fwrite(as.data.frame(desc_cat_succ1), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
+
+write("\n\n\n#### Second maternal age tertile\n\n\n", file = snakemake@output[[1]], append = TRUE)
+fwrite(as.data.frame(desc_succ2), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 fwrite(as.data.frame(desc_cat_succ2), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
+
+write("\n\n\n#### Third maternal age tertile\n\n\n", file = snakemake@output[[1]], append = TRUE)
+fwrite(as.data.frame(desc_succ3), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 fwrite(as.data.frame(desc_cat_succ3), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 
 } else {
 d$cat_prev_misc= factor(with(d, ifelse(is.na(prev_misc), NA, ifelse(prev_misc> 3, 3, prev_misc))))
 df$cat_prev_misc= factor(with(df, ifelse(is.na(prev_misc), NA, ifelse(prev_misc> 3, 3, prev_misc))))
 
+write("########## All embryo transfers#########", file = snakemake@output[[1]], append = TRUE)
+
 for (i in 0:3) {
+tertile= ifelse(i == 0, 'No previous', ifelse(i == 1, 'one previous', ifelse(i == 2, 'two previous', 'three or more previous')))
+
+write(paste("\n\n\n####", tertile, "pregnancy losses\n\n\n"), file = snakemake@output[[1]], append = TRUE)
+
 temp_d= d[d$cat_prev_misc== i, ]
 temp_df= df[df$cat_prev_misc== i, ]
 
 desc_all= temp_d %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -263,12 +280,25 @@ digits = list(everything() ~ c(2))) %>%
         style_fun= list(gtsummary::all_categorical() ~ style_percent_2digits)) %>%
   gtsummary::modify_header(ci_stat_0 ~ "**95% CI**")
 
+fwrite(as.data.frame(desc_all), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
+fwrite(as.data.frame(desc_cat_all), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
+
+}
 # Only in implantation success
 
+write("\n\n\n########## Only after successfull embryo implantation #########", file = snakemake@output[[1]], append = TRUE)
+
+for (i in 0:3) {
+tertile= ifelse(i == 0, 'No previous', ifelse(i == 1, 'one previous', ifelse(i == 2, 'two previous', 'three or more previous')))
+
+write(paste("\n\n\n####", tertile, "pregnancy losses\n\n\n"), file = snakemake@output[[1]], append = TRUE)
+
+temp_d= d[d$cat_prev_misc== i, ]
+temp_df= df[df$cat_prev_misc== i, ]
 
 desc_succ= df %>%
   tbl_summary(
-    include = c(maternal_age, year_transfer, gest_duration), # your continuous variables
+    include = c(maternal_age, gest_duration), # your continuous variables
 statistic = list(all_continuous() ~ "{mean}"),
 digits = list(everything() ~ c(2))) %>%
   add_ci(method = list(all_continuous() ~ "t.test"),
@@ -285,12 +315,10 @@ digits = list(everything() ~ c(2))) %>%
         style_fun= list(gtsummary::all_categorical() ~ style_percent_2digits)) %>%
   gtsummary::modify_header(ci_stat_0 ~ "**95% CI**")
 
-fwrite(as.data.frame(desc_all), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
-fwrite(as.data.frame(desc_cat_all), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 fwrite(as.data.frame(desc_succ), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
 fwrite(as.data.frame(desc_cat_succ), snakemake@output[[1]], sep = '\t', append= TRUE, col.names = TRUE, row.names = FALSE)
-
+} 
 
 } 
 
-}
+
