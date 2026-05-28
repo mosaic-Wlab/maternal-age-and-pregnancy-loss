@@ -18,6 +18,7 @@ rule all:
 		expand('results/figures/biochemical-to-clinical-loss-by-maternal-age-{oocytes}.pdf', oocytes= oocytes_nms),
 		expand('results/figures/{male_infer}-biochemical-to-clinical-loss-by-maternal-age-{oocytes}.pdf', male_infer= male_infer_nms, oocytes = 'own-oocyte'),
 		expand('results/description/descriptive-stats-{exposure}-{oocytes}.txt', oocytes= oocytes_nms, exposure= ['tertiles', 'multiples']),
+		expand('results/figures/standard-lm-gest_duration-by-maternal-age-{oocytes}.pdf', oocytes= oocytes_nms),
 		'results/figures/mixed-glm-maternal_age.pdf'
 
 

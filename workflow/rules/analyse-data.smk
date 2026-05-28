@@ -113,6 +113,21 @@ rule plot_biochemical_vs_clinical_loss:
         script:
                 '../scripts/lm-misc.R'
 
+rule plot_biochemical_vs_clinical_loss_standard:
+        'Plot of biochemical to clinical loss by maternal age.'
+        input:
+                'results/main_data/QIVF-QC-{oocytes}.txt'
+        output:
+                'results/figures/standard-biochemical-to-clinical-loss-by-maternal-age-{oocytes}.pdf',
+                'results/figures/data/standard-glm-biochemical-to-clinical-loss-by-maternal-age-{oocytes}.txt',
+                'results/figures/data/standard-lm-gest_duration-by-maternal-age-{oocytes}.txt',
+                'results/figures/standard-lm-gest_duration-by-maternal-age-{oocytes}.pdf'
+        conda:
+                '../envs/plots.yml'
+        script:
+                '../scripts/lm-misc.R'
+
+
 rule plot_biochemical_vs_clinical_loss_male_infer:
         'Plot of biochemical to clinical loss by maternal age.'
         input:

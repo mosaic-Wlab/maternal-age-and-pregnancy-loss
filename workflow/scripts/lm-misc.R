@@ -40,8 +40,11 @@ df = filter(df, Spermowndonated== 'Donerade')
 
 }
 
-#set.seed(1234)
-#df = df  %>% group_by(lopnr) %>% sample_n(1) %>% ungroup()
+if (grepl('standard', snakemake@output[[1]])){
+set.seed(1234)
+df = df  %>% group_by(lopnr) %>% sample_n(1) %>% ungroup()
+
+}
 
 df= mutate(df, maternal_tertiles= as.factor(ntile(maternal_age, 3)))
 
@@ -84,8 +87,11 @@ p1= ggplot(z, aes(x= factor(maternal_tertiles), y= p_hat, colour=maternal_tertil
 
 
 #### Use estimated marginal means to get the estimated probability for each tertile
+if (grepl('standard', snakemake@output[[1]])){
+m1= (glm(biok_loss ~ maternal_tertiles + prev_misc + year_transfer + Incubationdays, data= df, family= binomial(link = "logit")))
+} else {
 m1= (glmer(biok_loss ~ maternal_tertiles + prev_misc + year_transfer + Incubationdays + (1|lopnr), data=df, family= binomial(link = "logit")))
-
+}
 library(emmeans)
 
 emm_df <- as.data.frame(emmeans(m1, ~ maternal_tertiles, type = "response"))
@@ -104,9 +110,13 @@ ggsave(snakemake@output[[1]], p1, width= 88, height= 60, units= 'mm')
 
 # Estimate the effect of maternal age on biochemical pregnancy loss
 
+if (grepl('standard', snakemake@output[[1]])){
+m1= (glm(biok_loss ~ maternal_age + prev_misc + year_transfer + Incubationdays, data=df, family= binomial(link = "logit")))
+} else {
 m1= (glmer(biok_loss ~ maternal_age + prev_misc + year_transfer + Incubationdays + (1|lopnr), data=df, family= binomial(link = "logit")))
+}
 
-glm_confs= data.frame(confint.merMod(m1, parm= c("maternal_age", "prev_misc"), method= 'Wald'))
+glm_confs= data.frame(confint(m1, parm= c("maternal_age", "prev_misc"), method= 'Wald'))
 names(glm_confs)= c('lo95', 'up95')
 glm_confs$exposure= row.names(glm_confs)
 glm_confs$lo95= exp(glm_confs$lo95)
@@ -122,8 +132,12 @@ glm_sums_cont$individuals= length(unique(model.frame(m1)$lopnr))
 
 # Estimate the effect of maternal age tertiles on biochemical pregnancy loss
 
-m1= (glmer(biok_loss ~ maternal_tertiles + prev_misc + year_transfer + Incubationdays + (1|lopnr), data=df, family= binomial(link = "logit")))
+if (grepl('standard', snakemake@output[[1]])){
+m1= (glm(biok_loss ~ maternal_tertiles + prev_misc + year_transfer + Incubationdays, data=df, family= binomial(link = "logit")))
 
+} else {
+m1= (glmer(biok_loss ~ maternal_tertiles + prev_misc + year_transfer + Incubationdays + (1|lopnr), data=df, family= binomial(link = "logit")))
+}
 glm_confs= data.frame(confint(m1, parm= c('maternal_tertiles2', 'maternal_tertiles3', 'prev_misc'), method = 'Wald'))
 
 names(glm_confs)= c('lo95', 'up95')
@@ -152,7 +166,12 @@ fwrite(glm_df, snakemake@output[[2]], sep= '\t')
 
 ### Estimate maternal age effects on duration of pregnancy loss
 
+if (grepl('standard', snakemake@output[[1]])){
+m1= (lm(gest_duration~ maternal_age + prev_misc + year_transfer + Incubationdays, filter(df, misc == 1)))
+
+} else {
 m1= (lmer(gest_duration~ maternal_age + prev_misc + year_transfer + Incubationdays + (1|lopnr), filter(df, misc == 1)))
+}
 lm_confs= data.frame(confint(m1, parm= c('maternal_age', 'prev_misc'), method = 'Wald'))
 names(lm_confs)= c('lo95', 'up95')
 lm_confs$exposure= row.names(lm_confs)
@@ -165,8 +184,12 @@ lm_sums_cont$sample_size= nobs(m1)
 lm_sums_cont$individuals= length(unique(model.frame(m1)$lopnr))
 print('we are here 3')
 ### Estimate maternal age tertiles effects on duration of pregnancy loss using linear mixed models
+if (grepl('standard', snakemake@output[[1]])){
+m1= (lm(gest_duration~ maternal_tertiles + prev_misc + year_transfer + Incubationdays , filter(df, !is.na(biok_loss))))
 
+} else {
 m1= (lmer(gest_duration~ maternal_tertiles + prev_misc + year_transfer + Incubationdays + (1|lopnr), filter(df, !is.na(biok_loss))))
+}
 lm_confs= data.frame(confint(m1, parm= c('maternal_tertiles2', 'maternal_tertiles3', 'prev_misc'), method = 'Wald'))
 lm_confs$exposure= row.names(lm_confs)
 
