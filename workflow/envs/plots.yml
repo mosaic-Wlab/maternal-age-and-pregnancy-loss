@@ -3,18 +3,22 @@ channels:
     - conda-forge
     - bioconda
 dependencies:
+    - r-rlang=1.2.0
     - r-dplyr
     - r-data.table
     - r-base
     - zlib
     - r-r.utils
     - r-showtext
-    - r-cowplot
     - r-ggrepel
     - r-tidyr
     - r-ggplot2
-    - r-pammtools
-    - r-mgcv
     - r-ggsurvfit 
     - r-gtsummary
     - r-broom
+    - r-lme4
+    - r-lmerTest
+    - r-emmeans
+    - r-tidyverse
+    - r-lubridate
+    - r-cowplot

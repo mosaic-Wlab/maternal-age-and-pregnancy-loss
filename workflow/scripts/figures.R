@@ -8,7 +8,7 @@ library(ggsurvfit)
 
 colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73", 
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
+sPBIYlGn= c("#FAE9A0FF", "#DBD797FF", "#BCC68DFF", "#9CB484FF", "#7DA37BFF", "#5E9171FF", "#3F7F68FF", "#1F6E5EFF", "#005C55FF")
 ### Read data from women using own oocytes
 
 d= fread('/mnt/hdd/common/pol/maternal_age_miscarriage/results/maternal_age_miscarriage.txt')
@@ -148,8 +148,8 @@ pred_df = make_newdata(ped, tend=unique(tend), maternal_tertiles=factor(maternal
 ggplot(pred_df, aes(x=(tmid)/7, y=fit, col=maternal_tertiles, fill=maternal_tertiles)) +
   geom_line(lwd=0.6) +
   geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),alpha=0.02,lwd=0.2,lty="dashed") +
-  scale_color_manual(values=colorBlindBlack8[c(1,6,2)], name="Maternal age tertiles") +
-  scale_fill_manual(values=colorBlindBlack8[c(1,6,2)], name="Maternal age tertiles") +
+  scale_color_manual(values=sPBIYlGn[c(1,5,9)], name="Maternal age tertiles") +
+  scale_fill_manual(values= sPBIYlGn[c(1,5,9)], name="Maternal age tertiles") +
   scale_x_continuous(breaks=seq(0, 42, by=2), expand=c(0,0)) +
   ylim(c(-1.1, 0.9)) + 
   theme_bw() + xlab("gestational age, weeks") + ylab("log hazard ratio") +
@@ -283,8 +283,8 @@ pred_df_oocyte = make_newdata(ped_oocyte, tend=unique(tend), maternal_tertiles=f
 ggplot(pred_df_oocyte, aes(x=(tmid)/7, y=fit, col=maternal_tertiles, fill=maternal_tertiles)) +
   geom_line(lwd=0.6) +
   geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),alpha=0.02,lwd=0.2,lty="dashed") +
-  scale_color_manual(values=colorBlindBlack8[c(1,6,2)], name="Maternal age tertiles") +
-  scale_fill_manual(values=colorBlindBlack8[c(1,6,2)], name="Maternal age tertiles") +
+  scale_color_manual(values= sPBIYlGn[c(1,5,9)], name="Maternal age tertiles") +
+  scale_fill_manual(values=sPBIYlGn[c(1,5,9)], name="Maternal age tertiles") +
   scale_x_continuous(breaks=seq(0, 23, by=2), expand=c(0,0)) +
   ylim(c(-3.1, 2.9)) + 
   theme_bw() + xlab("gestational age, weeks") + ylab("log hazard ratio") +

@@ -16,7 +16,7 @@ showtext_auto(enable = TRUE)
 
 colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73", 
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
+sPBIYlGn= c("#FAE9A0FF", "#DBD797FF", "#BCC68DFF", "#9CB484FF", "#7DA37BFF", "#5E9171FF", "#3F7F68FF", "#1F6E5EFF", "#005C55FF")
 #d= fread('/mnt/hdd/common/pol/maternal_age_miscarriage/results/main_data/QIVF-QC-own-oocyte.txt')
 
 d= fread(snakemake@input[[1]])
@@ -39,8 +39,8 @@ m_tertiles= survfit2(Surv(gest_duration, misc)~ cat_prev_misc, filter(df1, misc=
 p1= ggsurvfit(m_tertiles) +
 theme_cowplot(font_size= 10) +
 # add_confidence_interval() +
-scale_color_manual(values = colorBlindBlack8[c(2,6,1,8)]) +
-  scale_fill_manual(values = colorBlindBlack8[c(2,6,1,8)]) +
+scale_color_manual(values = sPBIYlGn[c(1,4,6,9)]) +
+  scale_fill_manual(values = sPBIYlGn[c(1,4,6,9)]) +
 #  add_risktable() +
   add_quantile(color = "gray50", linewidth = 0.2) +
 #  scale_ggsurvfit() +
@@ -84,3 +84,4 @@ x2= df1 %>%
 
 x= bind_rows(as.data.frame(x1), as.data.frame(x2))
 fwrite(x, snakemake@output[[4]], sep= '\t')
+

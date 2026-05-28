@@ -15,6 +15,7 @@ showtext_auto(enable = TRUE)
 
 colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73", 
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+sPBIYlGn= c("#FAE9A0FF", "#DBD797FF", "#BCC68DFF", "#9CB484FF", "#7DA37BFF", "#5E9171FF", "#3F7F68FF", "#1F6E5EFF", "#005C55FF")
 
 ICD_COL_NAMES=c("DIA1","DIA2","DIA3","DIA4","DIA5","DIA6","DIA7","DIA8","DIA9","DIA10","DIA11","DIA12","DIA13","DIA14","DIA15","DIA16","DIA17","DIA18","DIA19","DIA20","DIA21","DIA22","DIA23","DIA24","DIA25","DIA26","DIA27","DIA28","DIA29","DIA30")
 
@@ -26,19 +27,26 @@ d= fread(snakemake@input[[1]])
 df= filter(d, Resultfetus1 != '', gest_duration > 15, !is.na(gest_duration), !is.na(maternal_age),
            !is.na(misc))
 
-outpatient= fread(snakemake@input[[2]])
-outpatient= filter(outpatient, AR> 2006)
-outpatient= select(outpatient, lopnr, AR, all_of(ICD_COL_NAMES))
-INFERTILITY_CODES=c('N97','N970','N971','N972','N973','N978','N979')
+#### Legacy code juts in case I mess up something - Pol
+#outpatient= fread(snakemake@input[[2]])
+#outpatient= filter(outpatient, AR> 2006)
+#outpatient= select(outpatient, lopnr, AR, all_of(ICD_COL_NAMES))
+#INFERTILITY_CODES=c('N97','N970','N971','N972','N973','N978','N979')
 
-MALE_INFERTILITY_CODES=c('N974')
+#MALE_INFERTILITY_CODES=c('N974')
 
-outpatient= mutate(outpatient, male_infertility= case_when((if_any(ICD_COL_NAMES, ~ . %in% MALE_INFERTILITY_CODES)) ~ TRUE, TRUE ~ FALSE), female_infertility=  case_when((if_any(ICD_COL_NAMES, ~ . %in% INFERTILITY_CODES)) ~ TRUE, TRUE ~ FALSE))
-outpatient= filter(outpatient, male_infertility, !female_infertility)
+#outpatient= mutate(outpatient, male_infertility= case_when((if_any(ICD_COL_NAMES, ~ . %in% MALE_INFERTILITY_CODES)) ~ TRUE, TRUE ~ FALSE), female_infertility=  case_when((if_any(ICD_COL_NAMES, ~ . %in% INFERTILITY_CODES)) ~ TRUE, TRUE ~ FALSE))
 
-male_inf_lopnr= unique(pull(outpatient, lopnr))
+#outpatient= filter(outpatient, male_infertility, !female_infertility)
+#male_inf_lopnr= unique(pull(outpatient, lopnr))
 
-df= filter(df, lopnr %in% male_inf_lopnr)
+if (snakemake@wildcards[['male_infer']] == 'male-infertility') {
+
+df= filter(df, male_infer== 1 & female_infer== 0)
+} else {
+
+df = filter(df, Spermowndonated== 'Donerade')
+}
 
 set.seed(1234)
 df = df %>% group_by(lopnr)  %>% sample_n(1) %>% ungroup()
@@ -56,6 +64,16 @@ file.create(snakemake@output[[6]])
 
 } else {
 
+ped = as_ped(df1, Surv(gest_duration, misc) ~ maternal_age, id = "id", cut=c(16,seq(20, 154, by=7)))
+mod.tv.age = bam(ped_status ~ ti(tend,bs='cr',k=11)  +
+                   maternal_age + ti(tend, by=maternal_age,
+bs='cr'), data=ped, offset=offset, family=poisson())
+mod.tv.age.ptable_cont= data.frame(summary(mod.tv.age)$p.table)
+mod.tv.age.ptable_cont$dependent= row.names(mod.tv.age.ptable_cont)
+
+mod.tv.age.stable_cont= data.frame(summary(mod.tv.age)$s.table)
+mod.tv.age.stable_cont$dependent= row.names(mod.tv.age.stable_cont) 
+
 ped = as_ped(df1, Surv(gest_duration, misc) ~ maternal_tertiles, id = "id", cut=c(16,seq(20, 154, by=7)))
 mod.tv.age = bam(ped_status ~ ti(tend,bs='cr',k=11)  + 
                    maternal_tertiles + ti(tend, by=as.ordered(maternal_tertiles),
@@ -63,23 +81,26 @@ bs='cr'), data=ped, offset=offset, family=poisson())
 
 summary(mod.tv.age)
 
-mod.tv.age.ptable= summary(mod.tv.age)$p.table
-mod.tv.age.ptable$outcome= 'Maternal tertiles'
+mod.tv.age.ptable= data.frame(summary(mod.tv.age)$p.table)
+mod.tv.age.ptable$dependent= row.names(mod.tv.age.ptable)
 
-mod.tv.age.stable= summary(mod.tv.age)$s.table
-mod.tv.age.stable$outcome= 'Maternal tertiles'
+mod.tv.age.stable= data.frame(summary(mod.tv.age)$s.table)
+mod.tv.age.stable$dependent= row.names(mod.tv.age.stable) 
 
 pred_df = make_newdata(ped, tend=unique(tend), maternal_tertiles=factor(maternal_tertiles)) %>%
   add_term(mod.tv.age, term="maternal_tertiles", se_mult=1.96) %>%
   mutate(tmid = 0.5*tstart+0.5*tend)
 
+ylimits= c(-3.1, 2.9)
+
+
 p1= ggplot(pred_df, aes(x=(tmid)/7, y=fit, col=maternal_tertiles, fill=maternal_tertiles)) +
   geom_line(lwd=0.6) +
   geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),alpha=0.02,lwd=0.2,lty="dashed") +
-  scale_color_manual(values=colorBlindBlack8[c(1,6,2)], name="Maternal age tertiles") +
-  scale_fill_manual(values=colorBlindBlack8[c(1,6,2)], name="Maternal age tertiles") +
+  scale_color_manual(values=sPBIYlGn[c(1,5,9)], name="Maternal age tertiles") +
+  scale_fill_manual(values=sPBIYlGn[c(1,5,9)], name="Maternal age tertiles") +
   scale_x_continuous(breaks=seq(0, 42, by=2), expand=c(0,0)) +
-  ylim(c(-1.1, 0.9)) + 
+  ylim(ylimits) + 
   theme_classic(base_size= 10) + 
   xlab("Gestational age, weeks") + 
   ylab("Log hazard ratio") +
@@ -120,6 +141,9 @@ print(summary(lm(maternal_age ~ early_loss, df)))
 #tv.age= rbind(mod.tv.age.ptable2, mod.tv.age.ptable)
 #tv.age.s= rbind(mod.tv.age.stable2, mod.tv.age.stable)
 
+mod.tv.age.ptable= rbind(mod.tv.age.ptable_cont, mod.tv.age.ptable)
+mod.tv.age.stable= rbind(mod.tv.age.stable_cont, mod.tv.age.stable)
+
 fwrite(mod.tv.age.ptable, snakemake@output[[2]], sep= '\t')
 
 fwrite(mod.tv.age.stable, snakemake@output[[3]], sep= '\t')
@@ -134,8 +158,8 @@ m_tertiles= survfit2(Surv(gest_duration, misc)~ maternal_tertiles, filter(df1, m
 p1= ggsurvfit(m_tertiles) +
 theme_cowplot(font_size= 10) +
 # add_confidence_interval() +
-scale_color_manual(values = colorBlindBlack8[c(2,6,1)]) +
-  scale_fill_manual(values = colorBlindBlack8[c(2,6,1)]) +
+scale_color_manual(values = sPBIYlGn[c(1,5,9)]) +
+  scale_fill_manual(values = sPBIYlGn[c(1,5,9)]) +
 #  add_risktable() +
   add_quantile(color = "gray50", linewidth = 0.2) +
 #  scale_ggsurvfit() +

@@ -16,6 +16,7 @@ showtext_auto(enable = TRUE)
 
 colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73", 
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+sPBIYlGn= c("#FAE9A0FF", "#DBD797FF", "#BCC68DFF", "#9CB484FF", "#7DA37BFF", "#5E9171FF", "#3F7F68FF", "#1F6E5EFF", "#005C55FF")
 
 d= fread(snakemake@input[[1]])
 d$implantation_failure= as.numeric(d$Resultfetus1=='')
@@ -111,8 +112,8 @@ m_tertiles= survfit2(Surv(gest_duration, misc)~ maternal_tertiles, filter(df, mi
 p1= ggsurvfit(m_tertiles) +
 theme_cowplot(font_size= 10) +
 # add_confidence_interval() +
-scale_color_manual(values = colorBlindBlack8[c(2,6,1)]) +
-  scale_fill_manual(values = colorBlindBlack8[c(2,6,1)]) +
+scale_color_manual(values = sPBIYlGn[c(1,5,9)]) +
+  scale_fill_manual(values = sPBIYlGn[c(1,5,9)]) +
 #  add_risktable() +
   add_quantile(color = "gray50", linewidth = 0.2) +
 #  scale_ggsurvfit() +

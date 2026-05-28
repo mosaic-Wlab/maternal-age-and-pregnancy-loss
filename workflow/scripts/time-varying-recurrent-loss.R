@@ -9,7 +9,7 @@ library(ggsurvfit)
 colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73", 
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-
+sPBIYlGn= c("#FAE9A0FF", "#DBD797FF", "#BCC68DFF", "#9CB484FF", "#7DA37BFF", "#5E9171FF", "#3F7F68FF", "#1F6E5EFF", "#005C55FF")
 library(pammtools)
 library(mgcv)
 
@@ -27,6 +27,16 @@ df = df %>% group_by(lopnr)  %>% sample_n(1) %>% ungroup()
 #df1= filter(df, misc== 1)
 df1= df
 
+ped = as_ped(df1, Surv(gest_duration, misc) ~ maternal_age, id = "id", cut=c(16,seq(20, 154, by=7)))
+mod.tv.age = bam(ped_status ~ ti(tend,bs='cr',k=11)  +
+                   maternal_age + ti(tend, by=maternal_age,
+bs='cr'), data=ped, offset=offset, family=poisson())
+mod.tv.age.ptable_cont= data.frame(summary(mod.tv.age)$p.table)
+mod.tv.age.ptable_cont$dependent= row.names(mod.tv.age.ptable_cont)
+
+mod.tv.age.stable_cont= data.frame(summary(mod.tv.age)$s.table)
+mod.tv.age.stable_cont$dependent= row.names(mod.tv.age.stable_cont)
+
 
 ped = as_ped(df1, Surv(gest_duration, misc) ~ cat_prev_misc, id = "id", cut=c(16, seq(20, 154, by=7)))
 
@@ -36,11 +46,11 @@ bs='cr'), data=ped, offset=offset, family=poisson())
 
 summary(mod.tv.age)
 
-mod.tv.age.ptable= summary(mod.tv.age)$p.table
-mod.tv.age.ptable$outcome= 'Previous miscarriages'
+mod.tv.age.ptable= data.frame(summary(mod.tv.age)$p.table)
+mod.tv.age.ptable$dependent= row.names(mod.tv.age.ptable)
 
-mod.tv.age.stable= summary(mod.tv.age)$s.table
-mod.tv.age.stable$outcome= 'Previous miscarriages'
+mod.tv.age.stable= data.frame(summary(mod.tv.age)$s.table)
+mod.tv.age.stable$dependent= row.names(mod.tv.age.stable)
 
 pred_df = make_newdata(ped, tend=unique(tend), cat_prev_misc=cat_prev_misc) %>%
   add_term(mod.tv.age, term="cat_prev_misc", se_mult=1.96) %>%
@@ -51,8 +61,8 @@ ylimits= if (snakemake@wildcards[['oocytes']]== 'own-oocyte') c(-1.1, 0.9) else 
 p1= ggplot(pred_df, aes(x=(tmid)/7, y=fit, col=cat_prev_misc, fill=cat_prev_misc)) +
   geom_line(lwd=0.6) +
   geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),alpha=0.02,lwd=0.2,lty="dashed") +
-  scale_color_manual(values=colorBlindBlack8[c(1,6,2, 8)], name="Previous miscarriages") +
-  scale_fill_manual(values=colorBlindBlack8[c(1,6,2, 8)], name="Previous miscarriages") +
+  scale_color_manual(values= sPBIYlGn[c(2,4,6, 8)], name="Previous miscarriages") +
+  scale_fill_manual(values= sPBIYlGn[c(2,4,6, 8)], name="Previous miscarriages") +
   scale_x_continuous(breaks=seq(0, 42, by=2), expand=c(0,0)) +
   ylim(ylimits) + 
   theme_classic(base_size= 10) + 
@@ -66,6 +76,8 @@ p1= ggplot(pred_df, aes(x=(tmid)/7, y=fit, col=cat_prev_misc, fill=cat_prev_misc
 
 ggsave(snakemake@output[[1]], p1, width= 88, height= 80, units= 'mm')
 
+mod.tv.age.ptable= rbind(mod.tv.age.ptable_cont, mod.tv.age.ptable)
+mod.tv.age.stable= rbind(mod.tv.age.stable_cont, mod.tv.age.stable)
 
 fwrite(data.frame(mod.tv.age.ptable), snakemake@output[[2]], sep= '\t')
 

@@ -6,6 +6,8 @@ rule fetch_pregn_loss:
                 '/mnt/hdd/data/swed/Graviditetsrelaterade_infektioner_BoJ/SoS/Patientregistret/UT_R_PAR_OV_M_14517_2022.txt'
         output:
                 'results/main_data/recurrent-multiple-loss.txt'
+        conda:
+                 '../envs/plots.yml'
         script:
                 '../scripts/fetch-recurrent-loss.R'
 
@@ -13,7 +15,9 @@ rule format_main_data:
 	'Format main data set.'
 	input:
 		'/mnt/hdd/data/swed/Graviditetsrelaterade_infektioner_BoJ/SoS/QIVF/SOS_IMPORTFIL_FINAL_230613.txt',
-		'/mnt/hdd/data/swed/Graviditetsrelaterade_infektioner_BoJ/SoS/Medicinska_Födelseregistret/UT_R_MFR_14517_2022.txt'
+		'/mnt/hdd/data/swed/Graviditetsrelaterade_infektioner_BoJ/SoS/Medicinska_Födelseregistret/UT_R_MFR_14517_2022.txt',
+		'/mnt/hdd/data/swed/Graviditetsrelaterade_infektioner_BoJ/SoS/Patientregistret/UT_R_PAR_OV_M_14517_2022.txt',
+		'results/main_data/recurrent-multiple-loss.txt'
 	output:
 		'results/main_data/QIVF-QC-own-oocyte.txt',
 		'results/main_data/QIVF-QC-oocyte-recipient.txt',
@@ -37,94 +41,30 @@ rule plot_rates_by_age:
 	script:
 		'../scripts/rates-per-age.R'
 
-rule plot_survival_time:
-	'Plot of survival rate for time-to-miscarriage.'
-	input:
-		'results/main_data/QIVF-QC-{oocytes}.txt'
-	output:
-		'results/figures/raw-survival-rate-{oocytes}.pdf',
-		'results/figures/raw-survival-rate-{oocytes}-only-miscarriages.pdf',
-		'results/figures/data/raw-survival-rate-{oocytes}.txt',
-		'results/figures/data/descriptive-{oocytes}.txt'
-	conda:
-		'../envs/plots.yml'
-	script:
-		'../scripts/survival-rate.R'
-
-
-rule plot_survival_age:
-	'Survival rates by maternal age tertiles.'
-	input:
-		'results/main_data/QIVF-QC-{oocytes}.txt'
-	output:
-		'results/figures/survival-rate-maternal-age-{oocytes}.pdf',
-		'results/figures/data/survival-rate-maternal-age-{oocytes}.txt',
-		'results/figures/data/time-varying-zph-maternal-age-{oocytes}.txt'
-	conda:
-		'../envs/plots.yml'
-	script:
-		'../scripts/survival-rate.R'
-
-rule pamm_models:
-	'Analyse time-to-event data using PAMM'
-	input:
-		'results/main_data/QIVF-QC-{oocytes}.txt'
-	output:
-		'results/figures/time-varying-PAMM-{oocytes}.pdf',
-		'results/figures/data/time-varying-PAMM-{oocytes}-parametric.txt',
-		'results/figures/data/time-varying-PAMM-{oocytes}-smooth.txt',
-		'results/figures/data/PAMM-{oocytes}-data.txt'
-	conda:
-                '../envs/plots.yml'
-	script:
-		'../scripts/time-varying-models.R'
-
-rule pamm_models_male_infertility:
-	'Analyse timeto-event data using PAMM in cases with male infertility.'
+rule glm_mixed_model:
+	'Implement mixed glm for associations between maternal age and history of miscarriage on implantation and miscarriage.'
 	input:
 		'results/main_data/QIVF-QC-{oocytes}.txt',
-		'/mnt/hdd/data/swed/Graviditetsrelaterade_infektioner_BoJ/SoS/Patientregistret/UT_R_PAR_OV_M_14517_2022.txt'
 	output:
-		'results/figures/male-infertility-time-varying-PAMM-{oocytes}.pdf',
-		'results/figures/data/male-infertility-time-varying-PAMM-{oocytes}-parametric.txt',
-		'results/figures/data/male-infertility-time-varying-PAMM-{oocytes}-smooth.txt',
-		'results/figures/data/male-infertility-PAMM-{oocytes}-data.txt',
-		'results/figures/male-infertility-boxplot-{oocytes}.pdf',
-		'results/figures/male-infertility-survival-rate-{oocytes}.pdf'
+                'results/figures/mixed-glm-{oocytes}.pdf',
+                'results/figures/data/mixed-glm-{oocytes}.txt',
 	conda:
 		'../envs/plots.yml'
 	script:
-		'../scripts/male-infertility.R'
+		'../scripts/mixed-glm-implantation-preg-loss.R'
 
-rule pamm_models_recurrent_loss:
-	'Analyse time-to-event data using PAMM in cases with recurrent pregnancy loss or multiple miscarriage.'
+rule glm_mixed_model_plots:
+	'GLM mixed models for associations between maternal age and biochemical loss among all losses.'
 	input:
-		'results/main_data/QIVF-QC-{oocytes}.txt',
-		'results/main_data/recurrent-multiple-loss.txt',
+		'results/main_data/QIVF-QC-own-oocyte.txt',
+		'results/main_data/QIVF-QC-oocyte-recipient.txt'
 	output:
-		'results/figures/time-varying-PAMM-recurrent-{oocytes}.pdf',
-		'results/figures/data/time-varying-PAMM-recurrent-{oocytes}-parametric.txt',
-		'results/figures/data/time-varying-PAMM-recurrent-{oocytes}-smooth.txt',
-		'results/figures/data/PAMM-recurrent-{oocytes}-data.txt',
+                'results/figures/mixed-glm-maternal_age.pdf',
+                'results/figures/data/mixed-glm-maternal_age_miscarriages.txt',	
 	conda:
 		'../envs/plots.yml'
 	script:
-		'../scripts/time-varying-recurrent-loss.R'
-
-rule plot_survival_recurrent:
-	'Survival rates by maternal age tertiles.'
-	input:
-		'results/main_data/QIVF-QC-{oocytes}.txt',
-		'results/main_data/recurrent-multiple-loss.txt'
-	output:
-		'results/figures/survival-rate-recurrent-{oocytes}.pdf',
-		'results/figures/data/survival-rate-recurrent-{oocytes}.txt',
-		'results/figures/data/time-varying-zph-recurrent-{oocytes}.txt',
-		'results/figures/data/recurrent-descriptive-{oocytes}-data.txt',
-	conda:
-		'../envs/plots.yml'
-	script:
-		'../scripts/recurrent-survival-rate.R'
+		'../scripts/emmeans_glmm_biochemical_loss.R'
 
 rule describe_all:
 	''
@@ -158,3 +98,32 @@ rule describe_by_exposure:
 		'../envs/plots.yml'
 	script:
 		'../scripts/description.R'
+
+rule plot_biochemical_vs_clinical_loss:
+        'Plot of biochemical to clinical loss by maternal age.'
+        input:
+                'results/main_data/QIVF-QC-{oocytes}.txt'
+        output:
+                'results/figures/biochemical-to-clinical-loss-by-maternal-age-{oocytes}.pdf',
+                'results/figures/data/glm-biochemical-to-clinical-loss-by-maternal-age-{oocytes}.txt',
+                'results/figures/data/lm-gest_duration-by-maternal-age-{oocytes}.txt',
+                'results/figures/lm-gest_duration-by-maternal-age-{oocytes}.pdf'
+        conda:
+                '../envs/plots.yml'
+        script:
+                '../scripts/lm-misc.R'
+
+rule plot_biochemical_vs_clinical_loss_male_infer:
+        'Plot of biochemical to clinical loss by maternal age.'
+        input:
+                'results/main_data/QIVF-QC-{oocytes}.txt'
+        output:
+                'results/figures/{male_infer}-biochemical-to-clinical-loss-by-maternal-age-{oocytes}.pdf',
+                'results/figures/data/glm-biochemical-to-clinical-loss-by-maternal-age-{oocytes}-{male_infer}.txt',
+                'results/figures/data/lm-gest_duration-by-maternal-age-{oocytes}-{male_infer}.txt',
+                'results/figures/lm-gest_duration-by-maternal-age-{male_infer}-{oocytes}.pdf'
+        conda:
+                '../envs/plots.yml'
+        script:
+                '../scripts/lm-misc.R'
+

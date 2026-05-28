@@ -1,22 +1,24 @@
 
 oocytes_nms= ['own-oocyte', 'oocyte-recipient']
+male_infer_nms= ['male-infertility', 'sperm-recipient']
 
 wildcard_constraints:
 	oocytes= '|'.join(oocytes_nms)
+
+wildcard_constraints:
+	male_infer= '|'.join(male_infer_nms)
 
 rule all:
 	'Collect all this output.'
 	input:
 		expand('results/figures/rates-by-maternal-age-{oocytes}.pdf', oocytes= oocytes_nms),
-		expand('results/figures/raw-survival-rate-{oocytes}.pdf', oocytes= oocytes_nms),
-		expand('results/figures/survival-rate-maternal-age-{oocytes}.pdf', oocytes= oocytes_nms),
-		expand('results/figures/time-varying-PAMM-{oocytes}.pdf', oocytes= oocytes_nms),
-		expand('results/figures/male-infertility-time-varying-PAMM-{oocytes}.pdf', oocytes= oocytes_nms),
-		expand('results/figures/data/PAMM-recurrent-{oocytes}-data.txt', oocytes= oocytes_nms),
-		expand('results/figures/data/time-varying-zph-recurrent-{oocytes}.txt', oocytes= oocytes_nms),
+		expand('results/figures/mixed-glm-{oocytes}.pdf', oocytes= oocytes_nms),
 		expand('results/description/descriptive-stats-{oocytes}.txt', oocytes= oocytes_nms),
 		'results/description/descriptive-stats-all.txt',
+		expand('results/figures/biochemical-to-clinical-loss-by-maternal-age-{oocytes}.pdf', oocytes= oocytes_nms),
+		expand('results/figures/{male_infer}-biochemical-to-clinical-loss-by-maternal-age-{oocytes}.pdf', male_infer= male_infer_nms, oocytes = 'own-oocyte'),
 		expand('results/description/descriptive-stats-{exposure}-{oocytes}.txt', oocytes= oocytes_nms, exposure= ['tertiles', 'multiples']),
+		'results/figures/mixed-glm-maternal_age.pdf'
 
 
 include: "rules/analyse-data.smk"

@@ -15,14 +15,15 @@ colorBlindBlack8= c("#000000", "#E69F00", "#56B4E9", "#009E73",
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 
+sPBIYlGn= c("#FAE9A0FF", "#DBD797FF", "#BCC68DFF", "#9CB484FF", "#7DA37BFF", "#5E9171FF", "#3F7F68FF", "#1F6E5EFF", "#005C55FF")
+
 d= fread(snakemake@input[[1]])
 
 d$implantation_failure= as.numeric(d$Resultfetus1=='')
 d$early_miscarriage= ifelse(is.na(d$misc) | is.na(d$gest_duration), NA, ifelse(d$misc== 1 & d$gest_duration< 7*10, 1, 0))
 
 
-df= filter(d, Resultfetus1 != '', gest_duration > 15, !is.na(gest_duration), !is.na(maternal_age),
-           !is.na(misc))
+df= filter(d, Resultfetus1 != '', gest_duration > 15, !is.na(gest_duration), !is.na(maternal_age), !is.na(misc))
 
 #Implantation rate
 
@@ -38,10 +39,19 @@ imp_by_age= group_by(d, ifelse(trunc(maternal_age)<= 20, 20,
 names(imp_by_age)[1]= 'maternal_age'
 imp_by_age$outcome= 'Implantation failure'
 
-df$Resultfetus1= factor(df$Resultfetus1, levels= c('Biokemisk graviditet', 'Spontan abort fore 13 veckor',
-                                                   'Spontan abort vecka 13+0 \x96 21+6',
-                                                   'Dodfott barn vecka 22+0 \x96 27+6',
-                                                   'Dodfott barn vecka 28+0 eller mer', 'Levande fott barn'))
+df$Resultfetus1= with(df, ifelse(Resultfetus1== 'Biokemisk graviditet', 'Biochemical loss',
+                               ifelse(Resultfetus1== 'Dodfott barn vecka 22+0 \x96 27+6', 'Fetal loss 22-28w',
+                                      ifelse(Resultfetus1== 'Dodfott barn vecka 28+0 eller mer', 'Fetal loss >28w',
+                                             ifelse(Resultfetus1== 'Levande fott barn', 'Liveborn',
+                                                    ifelse(Resultfetus1== 'Spontan abort fore 13 veckor', 'Fetal loss <13w',
+                                                           ifelse(Resultfetus1== '', 'Implantation failure', 'Fetal loss 13-22w')))))))
+
+df$Resultfetus1= factor(df$Resultfetus1, levels= c('Implantation failure', 'Biochemical loss',
+                                                 'Fetal loss <13w', 'Fetal loss 13-22w',
+                                                 'Fetal loss 22-28w', 'Fetal loss >28w',
+                                                 'Liveborn'))
+
+
 
 ### Descriptive characteristics
 
@@ -98,8 +108,8 @@ misc_by_age= filter(misc_by_age, !is.na(maternal_age))
 p1= ggplot(misc_by_age, aes(x= factor(maternal_age), y= p_hat, colour= outcome, fill= outcome)) +
   geom_pointrange(aes(ymin= loCI, ymax=upCI), size = .1, fatten= 0.2,
                 position=position_dodge(0.05), shape= 21 ) +
-  scale_color_manual(values= colorBlindBlack8[c(2, 6)]) +
-  scale_fill_manual(values= colorBlindBlack8[c(2, 6)]) +
+  scale_color_manual(values= sPBIYlGn[c(2, 8)]) +
+  scale_fill_manual(values= sPBIYlGn[c(2, 8)]) +
   theme_cowplot(font_size= 10) +
   ylab('Probability (95% CI)') +
   xlab('Maternal age, years') +
